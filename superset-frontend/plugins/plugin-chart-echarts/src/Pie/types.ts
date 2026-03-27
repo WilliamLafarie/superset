@@ -48,6 +48,8 @@ export type EchartsPieFormData = QueryFormData &
     showLabelsThreshold: number;
     roseType: 'radius' | 'area' | null;
     thresholdForOther: number;
+    padAngle: number;
+    cornerRadius: number;
   };
 
 export enum EchartsPieLabelType {
@@ -83,6 +85,8 @@ export const DEFAULT_FORM_DATA: EchartsPieFormData = {
   dateFormat: 'smart_date',
   roseType: null,
   thresholdForOther: 0,
+  padAngle: 0,
+  cornerRadius: 0,
 };
 
 export type PieChartTransformedProps =

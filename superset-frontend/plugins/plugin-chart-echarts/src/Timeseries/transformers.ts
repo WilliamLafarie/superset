@@ -203,6 +203,7 @@ export function transformSeries(
     connectNulls?: boolean;
     filterState?: FilterState;
     seriesContexts?: { [key: string]: ForecastSeriesEnum[] };
+    barBorderRadius?: number;
     markerEnabled?: boolean;
     markerSize?: number;
     areaOpacity?: number;
@@ -234,6 +235,7 @@ export function transformSeries(
   const { name, data } = series;
   const {
     area,
+    barBorderRadius = 0,
     connectNulls,
     filterState,
     seriesContexts = {},
@@ -329,6 +331,9 @@ export function transformSeries(
     itemStyle.borderWidth = 1.5;
     itemStyle.borderType = 'dotted';
     itemStyle.borderColor = itemStyle.color;
+  }
+  if (seriesType === 'bar' && barBorderRadius > 0 && !stack) {
+    itemStyle.borderRadius = barBorderRadius;
   }
   let emphasis = {};
   let showSymbol = false;

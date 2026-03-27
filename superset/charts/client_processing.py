@@ -363,7 +363,7 @@ def apply_client_processing(  # noqa: C901
         query["rowcount"] = len(processed_df.index)
 
         # Check if the DataFrame has a default RangeIndex, which should not be shown
-        show_default_index = not isinstance(processed_df.index, pd.RangeIndex)
+        show_default_index = False
 
         # Flatten hierarchical columns/index since they are represented as
         # `Tuple[str]`. Otherwise encoding to JSON later will fail because

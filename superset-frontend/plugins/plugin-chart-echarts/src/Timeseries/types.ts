@@ -64,6 +64,8 @@ export type EchartsTimeseriesFormData = QueryFormData & {
   forecastSeasonalityWeekly: null;
   forecastSeasonalityYearly: null;
   logAxis: boolean;
+  barBorderRadius: number;
+  lineWidth: number;
   markerEnabled: boolean;
   markerSize: number;
   metrics: QueryFormMetric[];

@@ -61,6 +61,8 @@ export const DEFAULT_FORM_DATA: EchartsTimeseriesFormData = {
     sections.FORECAST_DEFAULT_DATA.forecastSeasonalityWeekly,
   forecastSeasonalityYearly:
     sections.FORECAST_DEFAULT_DATA.forecastSeasonalityYearly,
+  barBorderRadius: 0,
+  lineWidth: 2,
   logAxis: false,
   markerEnabled: false,
   markerSize: 6,

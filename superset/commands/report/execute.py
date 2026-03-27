@@ -491,6 +491,15 @@ class BaseReportState:
             raise ReportScheduleCsvFailedError()
         return csv_data
 
+    def _get_excel_data(self) -> bytes:
+        import io
+
+        csv_data = self._get_csv_data()
+        df = pd.read_csv(io.BytesIO(csv_data))
+        output = io.BytesIO()
+        df.to_excel(output, index=False, engine="openpyxl")
+        return output.getvalue()
+
     def _get_embedded_data(self) -> pd.DataFrame:
         """
         Return data as a Pandas dataframe, to embed in notifications as a table.
@@ -601,6 +610,7 @@ class BaseReportState:
         :raises: ReportScheduleScreenshotFailedError
         """
         csv_data = None
+        excel_data = None
         screenshot_data = []
         pdf_data = None
         embedded_data = None
@@ -627,6 +637,13 @@ class BaseReportState:
                 csv_data = self._get_csv_data()
                 if not csv_data:
                     error_text = "Unexpected missing csv file"
+            elif (
+                self._report_schedule.chart
+                and self._report_schedule.report_format == ReportDataFormat.EXCEL
+            ):
+                excel_data = self._get_excel_data()
+                if not excel_data:
+                    error_text = "Unexpected missing excel file"
             if error_text:
                 return NotificationContent(
                     name=self._report_schedule.name,
@@ -662,6 +679,7 @@ class BaseReportState:
             pdf=pdf_data,
             description=self._report_schedule.description,
             csv=csv_data,
+            excel=excel_data,
             embedded_data=embedded_data,
             header_data=header_data,
         )

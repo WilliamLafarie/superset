@@ -192,6 +192,8 @@ class EmailNotification(BaseNotification):  # pylint: disable=too-few-public-met
         csv_data = None
         if self._content.csv:
             csv_data = {__("%(name)s.csv", name=self._name): self._content.csv}
+        elif self._content.excel:
+            csv_data = {__("%(name)s.xlsx", name=self._name): self._content.excel}
 
         pdf_data = None
         if self._content.pdf:

@@ -36,7 +36,13 @@ from flask import (
 )
 from flask_appbuilder import BaseView, Model, ModelView
 from flask_appbuilder.actions import action
-from flask_appbuilder.const import AUTH_OAUTH, AUTH_SAML
+from flask_appbuilder.const import AUTH_OAUTH
+
+try:
+    from flask_appbuilder.const import AUTH_SAML
+except ImportError:
+    # AUTH_SAML was removed in flask-appbuilder 4.x
+    AUTH_SAML = 5
 from flask_appbuilder.forms import DynamicForm
 from flask_appbuilder.models.sqla.filters import BaseFilter
 from flask_appbuilder.security.sqla.models import User

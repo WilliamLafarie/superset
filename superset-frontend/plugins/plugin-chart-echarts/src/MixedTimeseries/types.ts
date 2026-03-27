@@ -70,6 +70,10 @@ export type EchartsMixedTimeseriesFormData = QueryFormData & {
   areaB: boolean;
   contributionMode?: ContributionType;
   contributionModeB?: ContributionType;
+  barBorderRadius: number;
+  barBorderRadiusB: number;
+  lineWidth: number;
+  lineWidthB: number;
   markerEnabled: boolean;
   markerEnabledB: boolean;
   markerSize: number;
@@ -113,6 +117,10 @@ export const DEFAULT_FORM_DATA: EchartsMixedTimeseriesFormData = {
   xAxisTimeFormat: TIMESERIES_DEFAULTS.xAxisTimeFormat,
   area: TIMESERIES_DEFAULTS.area,
   areaB: TIMESERIES_DEFAULTS.area,
+  barBorderRadius: TIMESERIES_DEFAULTS.barBorderRadius,
+  barBorderRadiusB: TIMESERIES_DEFAULTS.barBorderRadius,
+  lineWidth: TIMESERIES_DEFAULTS.lineWidth,
+  lineWidthB: TIMESERIES_DEFAULTS.lineWidth,
   markerEnabled: TIMESERIES_DEFAULTS.markerEnabled,
   markerEnabledB: TIMESERIES_DEFAULTS.markerEnabled,
   markerSize: TIMESERIES_DEFAULTS.markerSize,

@@ -225,6 +225,8 @@ export default function transformProps(
     legendType,
     legendMargin,
     legendSort,
+    barBorderRadius,
+    lineWidth,
     logAxis,
     markerEnabled,
     markerSize,
@@ -399,7 +401,7 @@ export default function transformProps(
       seriesName,
     );
 
-    const lineStyle: LineStyleOption = {};
+    const lineStyle: LineStyleOption = { width: lineWidth };
     let lineSymbol;
     if (derivedSeries && timeShiftColor) {
       // Get the time offset for this series to assign different dash patterns
@@ -473,6 +475,7 @@ export default function transformProps(
       colorScaleKey,
       {
         area,
+        barBorderRadius,
         connectNulls: derivedSeries,
         filterState,
         seriesContexts,
@@ -520,6 +523,23 @@ export default function transformProps(
       }
     }
   });
+
+  // For stacked bar charts, only round the outermost (last) segment to avoid
+  // the "separate pills" visual artifact when all segments have rounded corners.
+  if (stack && barBorderRadius > 0 && seriesType === EchartsTimeseriesSeriesType.Bar) {
+    const regularBarSeries = series.filter(
+      (s: any) => s.type === 'bar' && s.itemStyle?.opacity !== 0,
+    );
+    if (regularBarSeries.length > 0) {
+      const lastSeries = regularBarSeries[regularBarSeries.length - 1] as any;
+      lastSeries.itemStyle = {
+        ...lastSeries.itemStyle,
+        borderRadius: isHorizontal
+          ? [0, barBorderRadius, barBorderRadius, 0]
+          : [barBorderRadius, barBorderRadius, 0, 0],
+      };
+    }
+  }
 
   // Add x-axis color legend when colorByPrimaryAxis is enabled
   if (colorByPrimaryAxis && groupBy.length === 0 && series.length > 0) {

@@ -46,6 +46,7 @@ import {
 
 const {
   area,
+  lineWidth,
   logAxis,
   markerEnabled,
   markerSize,
@@ -100,6 +101,21 @@ const config: ControlPanelConfig = {
               ),
               visibility: ({ controls }: ControlPanelsContainerProps) =>
                 Boolean(controls?.area?.value),
+            },
+          },
+        ],
+        [
+          {
+            name: 'lineWidth',
+            config: {
+              type: 'SliderControl',
+              label: t('Line Width'),
+              renderTrigger: true,
+              min: 0.5,
+              max: 10,
+              step: 0.5,
+              default: lineWidth,
+              description: t('Line width of the chart series.'),
             },
           },
         ],

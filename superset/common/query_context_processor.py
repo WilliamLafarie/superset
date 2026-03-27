@@ -246,7 +246,7 @@ class QueryContextProcessor:
         self, df: pd.DataFrame, coltypes: list[GenericDataType]
     ) -> str | list[dict[str, Any]]:
         if self._query_context.result_format in ChartDataResultFormat.table_like():
-            include_index = not isinstance(df.index, pd.RangeIndex)
+            include_index = False
             columns = list(df.columns)
             verbose_map = self._qc_datasource.data.get("verbose_map", {})
             if verbose_map:

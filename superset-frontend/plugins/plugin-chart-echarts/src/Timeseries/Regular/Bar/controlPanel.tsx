@@ -51,8 +51,14 @@ import {
 } from '../../constants';
 import { StackControlsValue } from '../../../constants';
 
-const { logAxis, minorSplitLine, truncateYAxis, yAxisBounds, orientation } =
-  DEFAULT_FORM_DATA;
+const {
+  barBorderRadius,
+  logAxis,
+  minorSplitLine,
+  truncateYAxis,
+  yAxisBounds,
+  orientation,
+} = DEFAULT_FORM_DATA;
 
 function createAxisTitleControl(axis: 'x' | 'y'): ControlSetRow[] {
   const isXAxis = axis === 'x';
@@ -360,6 +366,23 @@ const config: ControlPanelConfig = {
                   choices: valueAsStringArr,
                 };
               },
+            },
+          },
+        ],
+        [
+          {
+            name: 'barBorderRadius',
+            config: {
+              type: 'SliderControl',
+              label: t('Bar Border Radius'),
+              renderTrigger: true,
+              min: 0,
+              max: 20,
+              step: 1,
+              default: barBorderRadius,
+              description: t(
+                'Rounded corners for bars. On stacked charts, only the outer edge of each segment is rounded.',
+              ),
             },
           },
         ],

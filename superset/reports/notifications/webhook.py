@@ -79,6 +79,17 @@ class WebhookNotification(BaseNotification):
         files = []
         if self._content.csv:
             files.append(("files", ("report.csv", self._content.csv, "text/csv")))
+        if self._content.excel:
+            files.append(
+                (
+                    "files",
+                    (
+                        "report.xlsx",
+                        self._content.excel,
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    ),
+                )
+            )
         if self._content.pdf:
             files.append(
                 ("files", ("report.pdf", self._content.pdf, "application/pdf"))

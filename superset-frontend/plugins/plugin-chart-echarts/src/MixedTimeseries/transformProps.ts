@@ -170,6 +170,10 @@ export default function transformProps(
     legendSort,
     logAxis,
     logAxisSecondary,
+    barBorderRadius,
+    barBorderRadiusB,
+    lineWidth,
+    lineWidthB,
     markerEnabled,
     markerEnabledB,
     markerSize,
@@ -456,6 +460,8 @@ export default function transformProps(
       colorScaleKey,
       {
         area,
+        barBorderRadius,
+        lineStyle: { width: lineWidth },
         markerEnabled,
         markerSize,
         areaOpacity: opacity,
@@ -530,6 +536,8 @@ export default function transformProps(
       colorScaleKey,
       {
         area: areaB,
+        barBorderRadius: barBorderRadiusB,
+        lineStyle: { width: lineWidthB },
         markerEnabled: markerEnabledB,
         markerSize: markerSizeB,
         areaOpacity: opacityB,
@@ -561,6 +569,26 @@ export default function transformProps(
     if (transformedSeries) {
       series.push(transformedSeries);
       mapSeriesIdToAxis(transformedSeries, yAxisIndexB);
+    }
+  });
+
+  // For stacked bar charts, only round the outermost (last) segment per query
+  // to avoid the "separate pills" visual artifact.
+  [
+    { stack, seriesType, barBorderRadius },
+    { stack: stackB, seriesType: seriesTypeB, barBorderRadius: barBorderRadiusB },
+  ].forEach(({ stack: s, seriesType: st, barBorderRadius: r }) => {
+    if (s && r > 0 && st === EchartsTimeseriesSeriesType.Bar) {
+      const regularBarSeries = series.filter(
+        (ser: any) => ser.type === 'bar' && ser.itemStyle?.opacity !== 0,
+      );
+      if (regularBarSeries.length > 0) {
+        const lastSeries = regularBarSeries[regularBarSeries.length - 1] as any;
+        lastSeries.itemStyle = {
+          ...lastSeries.itemStyle,
+          borderRadius: [0, r, r, 0],
+        };
+      }
     }
   });
 

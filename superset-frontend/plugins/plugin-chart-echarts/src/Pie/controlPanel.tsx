@@ -42,6 +42,8 @@ const {
   numberFormat,
   showLabels,
   roseType,
+  padAngle,
+  cornerRadius,
 } = DEFAULT_FORM_DATA;
 
 const config: ControlPanelConfig = {
@@ -290,6 +292,36 @@ const config: ControlPanelConfig = {
               description: t('Inner radius of donut hole'),
               visibility: ({ controls }: ControlPanelsContainerProps) =>
                 Boolean(controls?.donut?.value),
+            },
+          },
+        ],
+        [
+          {
+            name: 'padAngle',
+            config: {
+              type: 'SliderControl',
+              label: t('Pad Angle'),
+              renderTrigger: true,
+              min: 0,
+              max: 10,
+              step: 0.5,
+              default: padAngle,
+              description: t('Padding angle between slices (in degrees).'),
+            },
+          },
+        ],
+        [
+          {
+            name: 'cornerRadius',
+            config: {
+              type: 'SliderControl',
+              label: t('Corner Radius'),
+              renderTrigger: true,
+              min: 0,
+              max: 50,
+              step: 1,
+              default: cornerRadius,
+              description: t('Rounded corner radius for each slice.'),
             },
           },
         ],

@@ -16,93 +16,90 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { ReactNode, useState, useEffect, useMemo } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
+import { Dayjs } from 'dayjs';
 import { t } from '@apache-superset/core/translation';
 import {
   NO_TIME_RANGE,
   useCSSTextTruncation,
   fetchTimeRange,
 } from '@superset-ui/core';
-import {
-  css,
-  styled,
-  useTheme,
-  SupersetTheme,
-} from '@apache-superset/core/theme';
+import { css, styled, useTheme } from '@apache-superset/core/theme';
 import {
   Button,
-  Constants,
   Divider,
+  RangePicker,
   Tooltip,
-  Select,
 } from '@superset-ui/core/components';
+import { extendedDayjs } from '@superset-ui/core/utils/dates';
 import ControlHeader from 'src/explore/components/ControlHeader';
 import { Icons } from '@superset-ui/core/components/Icons';
-import { useDebouncedEffect } from 'src/explore/exploreUtils';
 import { noOp } from 'src/utils/common';
 import ControlPopover from '../ControlPopover/ControlPopover';
+import { DateFilterControlProps } from './types';
+import { DateFilterTestKey, useDefaultTimeFilter } from './utils';
+import { DateLabel } from './components';
 
-import { DateFilterControlProps, FrameType } from './types';
-import {
-  DateFilterTestKey,
-  FRAME_OPTIONS,
-  guessFrame,
-  useDefaultTimeFilter,
-} from './utils';
-import {
-  CommonFrame,
-  CalendarFrame,
-  CustomFrame,
-  AdvancedFrame,
-  DateLabel,
-} from './components';
-import { CurrentCalendarFrame } from './components/CurrentCalendarFrame';
+const DATE_FORMAT = 'YYYY-MM-DD';
 
-const StyledRangeType = styled(Select)`
-  width: 272px;
-`;
+const QUICK_PRESETS: { label: string; value: string }[] = [
+  { label: t('Last day'), value: 'Last day' },
+  { label: t('Last week'), value: 'Last week' },
+  { label: t('Last month'), value: 'Last month' },
+  { label: t('Last quarter'), value: 'Last quarter' },
+  { label: t('Last year'), value: 'Last year' },
+  { label: t('This month'), value: 'Current month' },
+  { label: t('This year'), value: 'Current year' },
+];
+
+function parseActualRange(actual: string): [Dayjs, Dayjs] | null {
+  const parts = actual.split(' : ');
+  if (parts.length !== 2) return null;
+  const start = extendedDayjs(parts[0].trim());
+  const end = extendedDayjs(parts[1].trim());
+  if (!start.isValid() || !end.isValid()) return null;
+  return [start, end];
+}
 
 const ContentStyleWrapper = styled.div`
   ${({ theme }) => css`
-    .ant-row {
-      margin-top: 8px;
-    }
-
-    .ant-picker {
-      padding: 4px 17px 4px;
-      border-radius: 4px;
-    }
-
     .ant-divider-horizontal {
       margin: 16px 0;
     }
-
-    .control-label {
-      font-size: ${theme.fontSizeSM}px;
-      line-height: 16px;
-      margin: 8px 0;
-    }
-
     .section-title {
-      font-style: normal;
       font-weight: ${theme.fontWeightStrong};
       font-size: 15px;
       line-height: 24px;
       margin-bottom: 8px;
     }
-
-    .control-anchor-to {
-      margin-top: 16px;
+    .presets {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 4px;
     }
-
-    .control-anchor-to-datetime {
-      width: 217px;
-    }
-
     .footer {
       text-align: right;
     }
   `}
+`;
+
+const PresetTag = styled.div<{ active?: boolean }>`
+  display: inline-block;
+  padding: 2px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: ${({ theme }) => theme.fontSizeSM}px;
+  border: 1px solid
+    ${({ active, theme }) => (active ? theme.colorPrimary : theme.colorBorder)};
+  background: ${({ active, theme }) =>
+    active ? theme.colorPrimaryBg : 'transparent'};
+  color: ${({ active, theme }) =>
+    active ? theme.colorPrimary : theme.colorText};
+  &:hover {
+    border-color: ${({ theme }) => theme.colorPrimary};
+    color: ${({ theme }) => theme.colorPrimary};
+  }
 `;
 
 const IconWrapper = styled.span`
@@ -113,32 +110,7 @@ const IconWrapper = styled.span`
   .text {
     vertical-align: middle;
   }
-  .error {
-    color: ${({ theme }) => theme.colorError};
-  }
 `;
-
-const getTooltipTitle = (
-  isLabelTruncated: boolean,
-  label: string | undefined,
-  range: string | undefined,
-) =>
-  isLabelTruncated ? (
-    <div>
-      {label && <strong>{label}</strong>}
-      {range && (
-        <div
-          css={(theme: SupersetTheme) => css`
-            margin-top: ${theme.sizeUnit}px;
-          `}
-        >
-          {range}
-        </div>
-      )}
-    </div>
-  ) : (
-    range || null
-  );
 
 export default function DateFilterLabel(props: DateFilterControlProps) {
   const {
@@ -149,92 +121,66 @@ export default function DateFilterLabel(props: DateFilterControlProps) {
     isOverflowingFilterBar = false,
   } = props;
   const defaultTimeFilter = useDefaultTimeFilter();
-
   const value = props.value ?? defaultTimeFilter;
-  const [actualTimeRange, setActualTimeRange] = useState<string>(value);
 
-  const [show, setShow] = useState<boolean>(false);
-  const guessedFrame = useMemo(() => guessFrame(value), [value]);
-  const [frame, setFrame] = useState<FrameType>(guessedFrame);
-  const [lastFetchedTimeRange, setLastFetchedTimeRange] = useState(value);
+  const [show, setShow] = useState(false);
   const [timeRangeValue, setTimeRangeValue] = useState(value);
-  const [validTimeRange, setValidTimeRange] = useState<boolean>(false);
-  const [evalResponse, setEvalResponse] = useState<string>(value);
-  const [tooltipTitle, setTooltipTitle] = useState<ReactNode | null>(value);
-  const theme = useTheme();
+  const [pickerValue, setPickerValue] = useState<[Dayjs, Dayjs] | null>(null);
+  const [actualTimeRange, setActualTimeRange] = useState(value);
+  const [tooltipTitle, setTooltipTitle] = useState<ReactNode | null>(null);
   const [labelRef, labelIsTruncated] = useCSSTextTruncation<HTMLSpanElement>();
+  const theme = useTheme();
 
+  // Resolve committed value to display in the trigger label and tooltip
   useEffect(() => {
     if (value === NO_TIME_RANGE) {
       setActualTimeRange(NO_TIME_RANGE);
       setTooltipTitle(null);
-      setValidTimeRange(true);
       return;
     }
-    fetchTimeRange(value).then(({ value: actualRange, error }) => {
+    fetchTimeRange(value).then(({ value: actual, error }) => {
       if (error) {
-        setEvalResponse(error || '');
-        setValidTimeRange(false);
-        setTooltipTitle(value || null);
-      } else {
-        /*
-          HRT == human readable text
-          ADR == actual datetime range
-          +--------------+------+----------+--------+----------+-----------+
-          |              | Last | Previous | Custom | Advanced | No Filter |
-          +--------------+------+----------+--------+----------+-----------+
-          | control pill | HRT  | HRT      | ADR    | ADR      |   HRT     |
-          +--------------+------+----------+--------+----------+-----------+
-          | tooltip      | ADR  | ADR      | HRT    | HRT      |   ADR     |
-          +--------------+------+----------+--------+----------+-----------+
-        */
-        if (
-          guessedFrame === 'Common' ||
-          guessedFrame === 'Calendar' ||
-          guessedFrame === 'Current' ||
-          guessedFrame === 'No filter'
-        ) {
-          setActualTimeRange(value);
-          setTooltipTitle(
-            getTooltipTitle(labelIsTruncated, value, actualRange),
-          );
-        } else {
-          setActualTimeRange(actualRange || '');
-          setTooltipTitle(
-            getTooltipTitle(labelIsTruncated, actualRange, value),
-          );
-        }
-        setValidTimeRange(true);
-      }
-      setLastFetchedTimeRange(value);
-      setEvalResponse(actualRange || value);
-    });
-  }, [guessedFrame, labelIsTruncated, labelRef, value]);
-
-  useDebouncedEffect(
-    () => {
-      if (timeRangeValue === NO_TIME_RANGE) {
-        setEvalResponse(NO_TIME_RANGE);
-        setLastFetchedTimeRange(NO_TIME_RANGE);
-        setValidTimeRange(true);
+        setActualTimeRange(value);
+        setTooltipTitle(null);
         return;
       }
-      if (lastFetchedTimeRange !== timeRangeValue) {
-        fetchTimeRange(timeRangeValue).then(({ value: actualRange, error }) => {
-          if (error) {
-            setEvalResponse(error || '');
-            setValidTimeRange(false);
-          } else {
-            setEvalResponse(actualRange || '');
-            setValidTimeRange(true);
-          }
-          setLastFetchedTimeRange(timeRangeValue);
-        });
+      const isPreset = QUICK_PRESETS.some(p => p.value === value);
+      if (isPreset) {
+        setActualTimeRange(value);
+        setTooltipTitle(
+          labelIsTruncated ? (
+            <div>
+              <strong>{value}</strong>
+              <div>{actual}</div>
+            </div>
+          ) : (
+            actual || null
+          ),
+        );
+      } else {
+        setActualTimeRange(actual || value);
+        setTooltipTitle(null);
       }
-    },
-    Constants.SLOW_DEBOUNCE,
-    [timeRangeValue],
-  );
+    });
+  }, [value, labelIsTruncated]);
+
+  function onOpen() {
+    setTimeRangeValue(value);
+    if (value === NO_TIME_RANGE) {
+      setPickerValue(null);
+    } else {
+      fetchTimeRange(value).then(({ value: actual }) => {
+        setPickerValue(actual ? parseActualRange(actual) : null);
+      });
+    }
+    setShow(true);
+    onOpenPopover();
+  }
+
+  function onHide() {
+    setShow(false);
+    onClosePopover();
+  }
 
   function onSave() {
     onChange(timeRangeValue);
@@ -242,83 +188,71 @@ export default function DateFilterLabel(props: DateFilterControlProps) {
     onClosePopover();
   }
 
-  function onOpen() {
-    setTimeRangeValue(value);
-    setFrame(guessedFrame);
-    setShow(true);
-    onOpenPopover();
+  const toggleOverlay = () => (show ? onHide() : onOpen());
+
+  function handlePresetClick(presetValue: string) {
+    setTimeRangeValue(presetValue);
+    fetchTimeRange(presetValue).then(({ value: actual }) => {
+      setPickerValue(actual ? parseActualRange(actual) : null);
+    });
   }
 
-  function onHide() {
-    setTimeRangeValue(value);
-    setFrame(guessedFrame);
-    setShow(false);
-    onClosePopover();
-  }
-
-  const toggleOverlay = () => {
-    if (show) {
-      onHide();
-    } else {
-      onOpen();
-    }
-  };
-
-  function onChangeFrame(value: FrameType) {
-    if (value === NO_TIME_RANGE) {
+  function handleRangeChange(dates: [Dayjs | null, Dayjs | null] | null) {
+    if (!dates || !dates[0] || !dates[1]) {
       setTimeRangeValue(NO_TIME_RANGE);
+      setPickerValue(null);
+      return;
     }
-    setFrame(value);
+    const [start, end] = dates;
+    setPickerValue([start, end]);
+    setTimeRangeValue(
+      `${start.format(DATE_FORMAT)} : ${end.format(DATE_FORMAT)}`,
+    );
   }
+
+  const activePreset = QUICK_PRESETS.find(
+    p => p.value === timeRangeValue,
+  )?.value;
 
   const overlayContent = (
     <ContentStyleWrapper>
-      <div className="control-label">{t('Range type')}</div>
-      <StyledRangeType
-        ariaLabel={t('Range type')}
-        options={FRAME_OPTIONS}
-        value={frame}
-        onChange={onChangeFrame}
-      />
-      {frame !== 'No filter' && <Divider />}
-      {frame === 'Common' && (
-        <CommonFrame value={timeRangeValue} onChange={setTimeRangeValue} />
-      )}
-      {frame === 'Calendar' && (
-        <CalendarFrame value={timeRangeValue} onChange={setTimeRangeValue} />
-      )}
-      {frame === 'Current' && (
-        <CurrentCalendarFrame
-          value={timeRangeValue}
-          onChange={setTimeRangeValue}
-        />
-      )}
-      {frame === 'Advanced' && (
-        <AdvancedFrame value={timeRangeValue} onChange={setTimeRangeValue} />
-      )}
-      {frame === 'Custom' && (
-        <CustomFrame
-          value={timeRangeValue}
-          onChange={setTimeRangeValue}
-          isOverflowingFilterBar={isOverflowingFilterBar}
-        />
-      )}
-      {frame === 'No filter' && <div data-test={DateFilterTestKey.NoFilter} />}
-      <Divider />
-      <div>
-        <div className="section-title">{t('Actual time range')}</div>
-        {validTimeRange && (
-          <div>
-            {evalResponse === 'No filter' ? t('No filter') : evalResponse}
-          </div>
-        )}
-        {!validTimeRange && (
-          <IconWrapper className="warning">
-            <Icons.ExclamationCircleOutlined iconColor={theme.colorError} />
-            <span className="text error">{evalResponse}</span>
-          </IconWrapper>
-        )}
+      <div className="section-title">{t('Quick select')}</div>
+      <div className="presets">
+        {QUICK_PRESETS.map(preset => (
+          <PresetTag
+            key={preset.value}
+            active={activePreset === preset.value}
+            onClick={() => handlePresetClick(preset.value)}
+            role="button"
+          >
+            {preset.label}
+          </PresetTag>
+        ))}
+        <PresetTag
+          active={timeRangeValue === NO_TIME_RANGE}
+          onClick={() => {
+            setTimeRangeValue(NO_TIME_RANGE);
+            setPickerValue(null);
+          }}
+          role="button"
+          data-test={DateFilterTestKey.NoFilter}
+        >
+          {t('No filter')}
+        </PresetTag>
       </div>
+      <Divider />
+      <RangePicker
+        value={pickerValue}
+        onChange={handleRangeChange}
+        format={DATE_FORMAT}
+        allowClear
+        style={{ width: '100%' }}
+        getPopupContainer={nodeTrigger =>
+          isOverflowingFilterBar
+            ? (nodeTrigger.parentNode as HTMLElement)
+            : document.body
+        }
+      />
       <Divider />
       <div className="footer">
         <Button
@@ -333,7 +267,6 @@ export default function DateFilterLabel(props: DateFilterControlProps) {
         <Button
           buttonStyle="primary"
           cta
-          disabled={!validTimeRange}
           key="apply"
           onClick={onSave}
           data-test={DateFilterTestKey.ApplyButton}
@@ -359,7 +292,7 @@ export default function DateFilterLabel(props: DateFilterControlProps) {
       defaultOpen={show}
       open={show}
       onOpenChange={toggleOverlay}
-      overlayStyle={{ width: '600px' }}
+      overlayStyle={{ width: '480px' }}
       destroyTooltipOnHide
       getPopupContainer={nodeTrigger =>
         isOverflowingFilterBar

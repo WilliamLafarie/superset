@@ -48,6 +48,8 @@ import {
 
 const {
   area,
+  barBorderRadius,
+  lineWidth,
   logAxis,
   markerEnabled,
   markerSize,
@@ -230,6 +232,38 @@ function createCustomizeSection(
           step: 0.1,
           default: opacity,
           description: t('Opacity of area chart.'),
+        },
+      },
+    ],
+    [
+      {
+        name: `barBorderRadius${controlSuffix}`,
+        config: {
+          type: 'SliderControl',
+          label: t('Bar Border Radius'),
+          renderTrigger: true,
+          min: 0,
+          max: 20,
+          step: 1,
+          default: barBorderRadius,
+          description: t(
+            'Rounded corners for bars. On stacked charts, only the outer edge of each segment is rounded.',
+          ),
+        },
+      },
+    ],
+    [
+      {
+        name: `lineWidth${controlSuffix}`,
+        config: {
+          type: 'SliderControl',
+          label: t('Line Width'),
+          renderTrigger: true,
+          min: 0.5,
+          max: 10,
+          step: 0.5,
+          default: lineWidth,
+          description: t('Line width of the chart series.'),
         },
       },
     ],

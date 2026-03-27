@@ -683,9 +683,8 @@ class BaseViz:  # pylint: disable=too-many-public-methods
     @deprecated(deprecated_in="3.0")
     def get_csv(self) -> str | None:
         df = self.get_df_payload()["df"]  # leverage caching logic
-        include_index = not isinstance(df.index, pd.RangeIndex)
         return csv.df_to_escaped_csv(
-            df, index=include_index, **current_app.config["CSV_EXPORT"]
+            df, index=False, **current_app.config["CSV_EXPORT"]
         )
 
     @deprecated(deprecated_in="3.0")
